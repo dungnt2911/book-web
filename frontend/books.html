@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookStore — Danh Sách Sách</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--ink:#1a1410;--cream:#f5f0e8;--gold:#b8965a;--gold-lt:#d4af74;--warm:#e8dece;--muted:#7a6e62;--border:rgba(184,150,90,.18)}
+    body{font-family:'Josefin Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;cursor:none}
+    #cursor{width:10px;height:10px;background:var(--gold);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
+    #cursor.hovered{width:26px;height:26px;background:transparent;border:1.5px solid var(--gold)}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(245,240,232,.94);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--border)}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:var(--ink);letter-spacing:.04em;text-decoration:none}
+    .nav-logo span{color:var(--gold)}
+    .nav-links{display:flex;gap:32px;list-style:none}
+    .nav-links a{text-decoration:none;color:var(--ink);font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;transition:color .2s}
+    .nav-links a:hover,.nav-links a.active{color:var(--gold)}
+    .nav-actions{display:flex;gap:18px;align-items:center}
+    .nav-icon{background:none;border:none;cursor:none;position:relative}
+    .nav-icon svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.5}
+    .badge{position:absolute;top:-5px;right:-5px;width:15px;height:15px;background:var(--gold);border-radius:50%;font-size:.58rem;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:center}
+
+    /* PAGE HEADER */
+    .page-header{margin-top:72px;padding:52px 80px 0;display:flex;align-items:flex-end;justify-content:space-between}
+    .page-header-left .eyebrow{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px}
+    .page-header-left h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,3vw,2.8rem);font-weight:300;line-height:1.1}
+    .page-header-left h1 em{font-style:italic;color:var(--gold)}
+    .result-count{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
+    .result-count strong{color:var(--gold);font-weight:600}
+
+    /* SEARCH BAR */
+    .search-wrap{padding:28px 80px;border-bottom:1px solid var(--border)}
+    .search-bar{display:flex;gap:0;max-width:640px}
+    .search-input{flex:1;background:transparent;border:1px solid var(--border);border-right:none;padding:12px 20px;font-family:'Josefin Sans',sans-serif;font-size:.8rem;color:var(--ink);outline:none;letter-spacing:.04em;transition:border-color .3s}
+    .search-input:focus{border-color:var(--gold)}
+    .search-input::placeholder{color:var(--muted)}
+    .search-btn{background:var(--ink);border:none;padding:0 24px;cursor:none;transition:background .3s}
+    .search-btn:hover{background:var(--gold)}
+    .search-btn svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+
+    /* LAYOUT */
+    .main-layout{display:grid;grid-template-columns:260px 1fr;gap:0;padding:0 80px 80px;margin-top:0}
+
+    /* SIDEBAR */
+    .sidebar{padding:36px 36px 36px 0;border-right:1px solid var(--border);position:sticky;top:88px;align-self:start}
+    .filter-section{margin-bottom:32px}
+    .filter-title{font-size:.64rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:none}
+    .filter-title span{color:var(--muted);font-size:.6rem;letter-spacing:.1em;cursor:none}
+    .filter-title span:hover{color:var(--gold)}
+
+    /* category filter */
+    .cat-list{list-style:none;display:flex;flex-direction:column;gap:2px}
+    .cat-list li a{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:.72rem;color:var(--muted);text-decoration:none;letter-spacing:.06em;border-bottom:1px solid transparent;transition:color .2s,border-color .2s;cursor:none}
+    .cat-list li a:hover,.cat-list li a.active{color:var(--ink)}
+    .cat-list li a.active{font-weight:600;color:var(--gold)}
+    .cat-list .count{font-size:.62rem;color:var(--muted);background:var(--warm);padding:2px 7px}
+
+    /* price range */
+    .price-inputs{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+    .price-input{flex:1;border:1px solid var(--border);background:transparent;padding:7px 10px;font-family:'Josefin Sans',sans-serif;font-size:.72rem;color:var(--ink);outline:none;width:100%}
+    .price-input:focus{border-color:var(--gold)}
+    .price-sep{color:var(--muted);font-size:.7rem;flex-shrink:0}
+    .range-slider{width:100%;accent-color:var(--gold);cursor:none}
+    .apply-filter{width:100%;background:var(--ink);color:var(--cream);border:none;padding:10px;cursor:none;font-family:'Josefin Sans',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;transition:background .3s;margin-top:10px}
+    .apply-filter:hover{background:var(--gold)}
+
+    /* rating */
+    .rating-list{display:flex;flex-direction:column;gap:8px}
+    .rating-item{display:flex;align-items:center;gap:10px;cursor:none}
+    .rating-item input{accent-color:var(--gold);cursor:none}
+    .stars{color:var(--gold);font-size:.8rem;letter-spacing:2px}
+    .rating-item label{font-size:.7rem;color:var(--muted);cursor:none}
+
+    /* active filters */
+    .active-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+    .filter-tag{display:flex;align-items:center;gap:6px;background:var(--ink);color:var(--cream);padding:5px 12px;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase}
+    .filter-tag button{background:none;border:none;color:rgba(255,255,255,.5);cursor:none;font-size:.8rem;padding:0;line-height:1;transition:color .2s}
+    .filter-tag button:hover{color:#fff}
+
+    /* CONTENT */
+    .content{padding:36px 0 0 48px}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+    .sort-wrap{display:flex;align-items:center;gap:12px}
+    .sort-label{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    .sort-select{background:transparent;border:1px solid var(--border);padding:7px 28px 7px 12px;font-family:'Josefin Sans',sans-serif;font-size:.72rem;color:var(--ink);outline:none;cursor:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='none' stroke='%237a6e62' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+    .view-btns{display:flex;gap:4px}
+    .view-btn{width:34px;height:34px;border:1px solid var(--border);background:none;cursor:none;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s}
+    .view-btn.active,.view-btn:hover{background:var(--ink);border-color:var(--ink)}
+    .view-btn svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.5}
+    .view-btn.active svg,.view-btn:hover svg{stroke:var(--cream)}
+
+    /* BOOKS GRID */
+    .books-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;transition:all .3s}
+    .books-grid.list-view{grid-template-columns:1fr}
+
+    .book-card{cursor:none;position:relative}
+    .book-cover{position:relative;aspect-ratio:2/3;overflow:hidden;margin-bottom:14px}
+    .book-cover img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+    .book-card:hover .book-cover img{transform:scale(1.05)}
+    .book-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:var(--ink);font-size:.55rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;z-index:1}
+    .book-badge.sale{background:var(--ink);color:var(--cream)}
+    .book-actions{position:absolute;inset:0;background:rgba(26,20,16,.55);display:flex;align-items:center;justify-content:center;gap:10px;opacity:0;transition:opacity .3s;z-index:2}
+    .book-card:hover .book-actions{opacity:1}
+    .bact-btn{width:38px;height:38px;border:1px solid rgba(255,255,255,.5);background:none;cursor:none;display:flex;align-items:center;justify-content:center;transition:background .2s;transform:translateY(6px);transition:transform .3s,background .2s}
+    .book-card:hover .bact-btn{transform:translateY(0)}
+    .bact-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.5}
+    .bact-btn:hover{background:var(--gold);border-color:var(--gold)}
+    .book-cat{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:5px}
+    .book-title{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:400;color:var(--ink);line-height:1.25;margin-bottom:3px}
+    .book-author{font-size:.66rem;color:var(--muted);letter-spacing:.06em;margin-bottom:8px}
+    .book-rating{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+    .rating-stars{color:var(--gold);font-size:.7rem;letter-spacing:1px}
+    .rating-num{font-size:.62rem;color:var(--muted)}
+    .book-price{display:flex;align-items:center;gap:8px}
+    .price-new{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:600;color:var(--gold)}
+    .price-old{font-size:.72rem;color:var(--muted);text-decoration:line-through}
+
+    /* LIST VIEW */
+    .books-grid.list-view .book-card{display:grid;grid-template-columns:120px 1fr;gap:20px}
+    .books-grid.list-view .book-cover{aspect-ratio:2/3;margin-bottom:0;height:160px}
+    .books-grid.list-view .book-info{display:flex;flex-direction:column;justify-content:center;padding:8px 0}
+    .book-desc{font-size:.75rem;color:var(--muted);line-height:1.7;margin-bottom:10px;display:none}
+    .books-grid.list-view .book-desc{display:block}
+
+    /* PAGINATION */
+    .pagination{display:flex;gap:4px;margin-top:48px;justify-content:center}
+    .page-btn{width:38px;height:38px;border:1px solid var(--border);background:none;cursor:none;font-family:'Josefin Sans',sans-serif;font-size:.7rem;color:var(--muted);transition:all .2s;display:flex;align-items:center;justify-content:center}
+    .page-btn:hover,.page-btn.active{background:var(--ink);border-color:var(--ink);color:var(--cream)}
+    .page-btn.active{background:var(--gold);border-color:var(--gold)}
+    .page-dots{display:flex;align-items:center;padding:0 6px;font-size:.7rem;color:var(--muted)}
+
+    /* EMPTY STATE */
+    .empty-state{text-align:center;padding:80px 0;display:none}
+    .empty-state svg{width:56px;height:56px;stroke:var(--muted);fill:none;stroke-width:1;margin-bottom:20px;opacity:.5}
+    .empty-state h3{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;color:var(--ink);margin-bottom:10px}
+    .empty-state p{font-size:.75rem;color:var(--muted);letter-spacing:.06em}
+
+    /* skeleton */
+    .skeleton{background:linear-gradient(90deg,var(--warm) 25%,var(--cream) 50%,var(--warm) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    .reveal{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s}
+    .reveal.visible{opacity:1;transform:translateY(0)}
+  </style>
+</head>
+<body>
+<div id="cursor"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html"><span>Book</span> Store</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Trang Chủ</a></li>
+    <li><a href="books.html" class="active">Danh Mục</a></li>
+    <li><a href="#">Sách Mới</a></li>
+    <li><a href="#">Khuyến Mãi</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-icon" onclick="document.getElementById('searchInput').focus();window.scrollTo({top:160,behavior:'smooth'})">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+    <button class="nav-icon" onclick="location.href='Auth.html'">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </button>
+    <button class="nav-icon" style="position:relative" onclick="location.href='cart.html'">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="badge" id="cartBadge">0</span>
+    </button>
+</div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-header-left">
+    <p class="eyebrow">Kho sách</p>
+    <h1>Tất Cả <em>Đầu Sách</em></h1>
+  </div>
+  <div class="result-count">Hiển thị <strong id="showCount">0</strong> / <strong id="totalCount">0</strong> đầu sách</div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-bar">
+    <input class="search-input" id="searchInput" type="text" placeholder="Tìm tên sách, tác giả, thể loại…" oninput="debounceSearch()"/>
+    <button class="search-btn" onclick="doSearch()">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="main-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <!-- Categories -->
+    <div class="filter-section">
+      <div class="filter-title">Thể Loại <span onclick="clearCat()">Xóa</span></div>
+      <ul class="cat-list" id="catList">
+        <li><a href="#" class="active" onclick="filterCat('',this)">Tất cả <span class="count">0</span></a></li>
+      </ul>
+    </div>
+
+    <!-- Price -->
+    <div class="filter-section">
+      <div class="filter-title">Khoảng Giá <span onclick="clearPrice()">Xóa</span></div>
+      <div class="price-inputs">
+        <input class="price-input" id="minPrice" type="number" placeholder="0" min="0"/>
+        <span class="price-sep">—</span>
+        <input class="price-input" id="maxPrice" type="number" placeholder="500000" max="1000000"/>
+      </div>
+      <button class="apply-filter" onclick="applyPrice()">Áp Dụng</button>
+    </div>
+
+    <!-- Rating -->
+    <div class="filter-section">
+      <div class="filter-title">Đánh Giá</div>
+      <div class="rating-list">
+        <label class="rating-item"><input type="radio" name="rating" value="0" checked onchange="filterRating(0)"/> <span class="stars">★★★★★</span> <span style="font-size:.65rem;color:var(--muted)">Tất cả</span></label>
+        <label class="rating-item"><input type="radio" name="rating" value="4" onchange="filterRating(4)"/> <span class="stars">★★★★</span> <span style="font-size:.65rem;color:var(--muted)">trở lên</span></label>
+        <label class="rating-item"><input type="radio" name="rating" value="3" onchange="filterRating(3)"/> <span class="stars">★★★</span> <span style="font-size:.65rem;color:var(--muted)">trở lên</span></label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <!-- Active filters -->
+    <div class="active-filters" id="activeFilters"></div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="sort-wrap">
+        <span class="sort-label">Sắp xếp:</span>
+        <select class="sort-select" id="sortSelect" onchange="sortBooks()">
+          <option value="default">Mặc định</option>
+          <option value="price-asc">Giá: Thấp → Cao</option>
+          <option value="price-desc">Giá: Cao → Thấp</option>
+          <option value="name">Tên A–Z</option>
+          <option value="rating">Đánh giá cao nhất</option>
+          <option value="newest">Mới nhất</option>
+        </select>
+      </div>
+      <div class="view-btns">
+        <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')" title="Lưới">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </button>
+        <button class="view-btn" id="listViewBtn" onclick="setView('list')" title="Danh sách">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="books-grid" id="booksGrid"></div>
+
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <h3>Không tìm thấy sách</h3>
+      <p>Thử thay đổi từ khóa hoặc bộ lọc</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </main>
+</div>
+
+<script>
+// --- cursor ---
+const cur=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px'});
+function addHover(els){els.forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('hovered'));el.addEventListener('mouseleave',()=>cur.classList.remove('hovered'))})}
+addHover(document.querySelectorAll('a,button,input,select,label'));
+
+// --- State ---
+let allBooks=[], filtered=[], categories=[];
+let activeCat='', minP=0, maxP=Infinity, minRating=0, searchQ='';
+let currentPage=1; const PER_PAGE=9;
+let cart=JSON.parse(localStorage.getItem('cart')||'[]');
+let debounceTimer;
+
+const SAMPLE_BOOKS=[
+  {_id:'1',title:'Nhà Giả Kim',author:'Paulo Coelho',category:{name:'Văn Học'},price:89000,originalPrice:120000,rating:4.8,sold:1240,image:'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&q=80',badge:'Bestseller',description:'Câu chuyện về một cậu bé chăn cừu người Tây Ban Nha trên hành trình tìm kho báu của mình.',createdAt:'2024-01-01'},
+  {_id:'2',title:'Đắc Nhân Tâm',author:'Dale Carnegie',category:{name:'Tâm Lý'},price:75000,originalPrice:null,rating:4.7,sold:980,image:'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',badge:'',description:'Cuốn sách kinh điển về nghệ thuật giao tiếp và tạo dựng mối quan hệ.',createdAt:'2024-01-05'},
+  {_id:'3',title:'Tư Duy Nhanh Và Chậm',author:'Daniel Kahneman',category:{name:'Kinh Tế'},price:95000,originalPrice:130000,rating:4.6,sold:750,image:'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80',badge:'',description:'Khám phá hai hệ thống tư duy điều khiển cách chúng ta đưa ra quyết định.',createdAt:'2024-02-01'},
+  {_id:'4',title:'Lược Sử Loài Người',author:'Yuval Noah Harari',category:{name:'Khoa Học'},price:110000,originalPrice:145000,rating:4.9,sold:1500,image:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',badge:'Hot',description:'Hành trình 70.000 năm của loài người từ thời kỳ đồ đá đến thời đại công nghệ.',createdAt:'2024-01-15'},
+  {_id:'5',title:'Sapiens',author:'Yuval Noah Harari',category:{name:'Khoa Học'},price:120000,originalPrice:160000,rating:4.8,sold:1100,image:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&q=80',badge:'Mới',description:'Phiên bản mở rộng về lịch sử loài người với nhiều góc nhìn mới.',createdAt:'2025-01-10'},
+  {_id:'6',title:'Khéo Ăn Nói Sẽ Có Được Thiên Hạ',author:'Trác Nhã',category:{name:'Tâm Lý'},price:68000,originalPrice:null,rating:4.5,sold:620,image:'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?w=400&q=80',badge:'',description:'Nghệ thuật ngôn từ giúp bạn thành công trong cuộc sống và sự nghiệp.',createdAt:'2024-03-01'},
+  {_id:'7',title:'Dám Nghĩ Lớn',author:'David J. Schwartz',category:{name:'Tâm Lý'},price:85000,originalPrice:110000,rating:4.6,sold:870,image:'https://images.unsplash.com/photo-1580537659466-0a9bfa916a54?w=400&q=80',badge:'',description:'Cuốn sách truyền cảm hứng giúp bạn phát triển tư duy và đạt được thành công.',createdAt:'2024-04-01'},
+  {_id:'8',title:'Nhà Thờ Đức Bà Paris',author:'Victor Hugo',category:{name:'Văn Học'},price:92000,originalPrice:125000,rating:4.7,sold:540,image:'https://images.unsplash.com/photo-1568667256549-094345857637?w=400&q=80',badge:'Kinh điển',description:'Kiệt tác văn học Pháp thế kỷ 19 về tình yêu và bi kịch tại Paris.',createdAt:'2023-12-01'},
+  {_id:'9',title:'Chiến Tranh Và Hòa Bình',author:'Leo Tolstoy',category:{name:'Văn Học'},price:145000,originalPrice:200000,rating:4.9,sold:320,image:'https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=400&q=80',badge:'Kinh điển',description:'Tác phẩm vĩ đại nhất trong văn học Nga về chiến tranh Napoleon.',createdAt:'2023-11-01'},
+  {_id:'10',title:'Kinh Tế Học Hài Hước',author:'Steven Levitt',category:{name:'Kinh Tế'},price:78000,originalPrice:null,rating:4.4,sold:680,image:'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&q=80',badge:'',description:'Khám phá thế giới qua lăng kính kinh tế học với những câu hỏi thú vị.',createdAt:'2024-05-01'},
+  {_id:'11',title:'Vũ Trụ Trong Vỏ Hạt Dẻ',author:'Stephen Hawking',category:{name:'Khoa Học'},price:98000,originalPrice:135000,rating:4.8,sold:910,image:'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&q=80',badge:'',description:'Vật lý học hiện đại được giải thích theo cách dễ hiểu và hấp dẫn nhất.',createdAt:'2024-02-15'},
+  {_id:'12',title:'Người Giàu Có Nhất Thành Babylon',author:'George S. Clason',category:{name:'Kinh Tế'},price:65000,originalPrice:85000,rating:4.5,sold:1050,image:'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&q=80',badge:'',description:'Những bí quyết tài chính cổ đại từ thành Babylon huyền thoại.',createdAt:'2024-01-20'},
+];
+
+// --- Init ---
+async function init(){
+  try{
+    const res=await fetch('http://localhost:3000/api/books');
+    if(!res.ok) throw new Error();
+    const data=await res.json();
+    allBooks=data.books||data||SAMPLE_BOOKS;
+  }catch{allBooks=SAMPLE_BOOKS}
+  buildCategories();
+  filtered=[...allBooks];
+  render();
+  updateCartBadge();
+}
+
+function buildCategories(){
+  const map={};
+  allBooks.forEach(b=>{
+    const n=b.category?.name||b.category||'Khác';
+    map[n]=(map[n]||0)+1;
+  });
+  const list=document.getElementById('catList');
+  list.innerHTML=`<li><a href="#" class="active" onclick="filterCat('',this)">Tất cả <span class="count">${allBooks.length}</span></a></li>`;
+  Object.entries(map).forEach(([n,c])=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<a href="#" onclick="filterCat('${n}',this)">${n} <span class="count">${c}</span></a>`;
+    list.appendChild(li);
+  });
+  addHover(list.querySelectorAll('a'));
+}
+
+// --- Filters ---
+function filterCat(cat,el){
+  event.preventDefault();
+  activeCat=cat;
+  document.querySelectorAll('.cat-list a').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+function clearCat(){activeCat='';document.querySelectorAll('.cat-list a').forEach((a,i)=>a.classList.toggle('active',i===0));applyFilters();}
+function applyPrice(){minP=+document.getElementById('minPrice').value||0;maxP=+document.getElementById('maxPrice').value||Infinity;applyFilters();}
+function clearPrice(){minP=0;maxP=Infinity;document.getElementById('minPrice').value='';document.getElementById('maxPrice').value='';applyFilters();}
+function filterRating(r){minRating=r;applyFilters();}
+
+function debounceSearch(){clearTimeout(debounceTimer);debounceTimer=setTimeout(doSearch,350);}
+function doSearch(){searchQ=document.getElementById('searchInput').value.trim().toLowerCase();applyFilters();}
+
+function applyFilters(){
+  filtered=allBooks.filter(b=>{
+    const cat=b.category?.name||b.category||'';
+    const price=b.price||0;
+    const rating=b.rating||0;
+    const q=searchQ;
+    return (!activeCat||cat===activeCat)
+      &&price>=minP&&price<=maxP
+      &&rating>=minRating
+      &&(!q||b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)||cat.toLowerCase().includes(q));
+  });
+  sortBooks();
+  currentPage=1;
+  renderActiveFilters();
+  render();
+}
+
+function sortBooks(){
+  const v=document.getElementById('sortSelect').value;
+  filtered.sort((a,b)=>{
+    if(v==='price-asc') return a.price-b.price;
+    if(v==='price-desc') return b.price-a.price;
+    if(v==='name') return a.title.localeCompare(b.title,'vi');
+    if(v==='rating') return (b.rating||0)-(a.rating||0);
+    if(v==='newest') return new Date(b.createdAt)-new Date(a.createdAt);
+    return 0;
+  });
+  render();
+}
+
+function renderActiveFilters(){
+  const wrap=document.getElementById('activeFilters');
+  wrap.innerHTML='';
+  if(activeCat){const t=makeTag(activeCat,()=>clearCat());wrap.appendChild(t);}
+  if(minP>0||maxP<Infinity){const t=makeTag(`${fmtPrice(minP)} – ${maxP===Infinity?'Max':fmtPrice(maxP)}`,()=>clearPrice());wrap.appendChild(t);}
+  if(searchQ){const t=makeTag(`"${searchQ}"`,()=>{searchQ='';document.getElementById('searchInput').value='';applyFilters();});wrap.appendChild(t);}
+}
+function makeTag(text,onClose){
+  const d=document.createElement('div');d.className='filter-tag';
+  d.innerHTML=`${text}<button onclick="">✕</button>`;
+  d.querySelector('button').addEventListener('click',onClose);
+  return d;
+}
+
+// --- Render ---
+function render(){
+  const grid=document.getElementById('booksGrid');
+  const empty=document.getElementById('emptyState');
+  const start=(currentPage-1)*PER_PAGE;
+  const page=filtered.slice(start,start+PER_PAGE);
+
+  document.getElementById('showCount').textContent=filtered.length;
+  document.getElementById('totalCount').textContent=allBooks.length;
+
+  if(!filtered.length){grid.innerHTML='';empty.style.display='block';renderPagination();return;}
+  empty.style.display='none';
+
+  const isListView=grid.classList.contains('list-view');
+  grid.innerHTML=page.map(b=>`
+    <div class="book-card reveal" data-id="${b._id}">
+      <div class="book-cover">
+        <img src="${b.image?.startsWith('http') ? b.image : b.image ? 'http://localhost:3000/uploads/'+b.image : 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&q=80'}" alt="${b.title}" loading="lazy"/>
+        ${b.badge?`<span class="book-badge">${b.badge}</span>`:''}
+        ${b.originalPrice?`<span class="book-badge sale" style="top:auto;bottom:10px">-${Math.round((1-b.price/b.originalPrice)*100)}%</span>`:''}
+        <div class="book-actions">
+          <button class="bact-btn" onclick="toggleWish('${b._id}')" title="Yêu thích"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-width="1.5"/></svg></button>
+          <button class="bact-btn" onclick="location.href='book-detail.html?id=${b._id}'" title="Xem chi tiết"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke-width="1.5"/></svg></button>
+          <button class="bact-btn" onclick="addToCart(${JSON.stringify(b).replace(/"/g,'&quot;')})" title="Thêm giỏ"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke-width="1.5"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0" stroke-width="1.5"/></svg></button>
+        </div>
+      </div>
+      <div class="book-info">
+        <div class="book-cat">${b.category?.name||b.category||''}</div>
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+        <div class="book-rating">
+          <span class="rating-stars">${'★'.repeat(Math.round(b.rating||0))}${'☆'.repeat(5-Math.round(b.rating||0))}</span>
+          <span class="rating-num">(${b.rating||0})</span>
+        </div>
+        <div class="book-desc">${b.description||''}</div>
+        <div class="book-price">
+          <span class="price-new">${fmtPrice(b.price)}</span>
+          ${b.originalPrice?`<span class="price-old">${fmtPrice(b.originalPrice)}</span>`:''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Reveal
+  setTimeout(()=>{
+    document.querySelectorAll('.book-card.reveal').forEach((el,i)=>{
+      setTimeout(()=>el.classList.add('visible'),i*60);
+    });
+    addHover(document.querySelectorAll('.book-card,.bact-btn'));
+  },10);
+
+  renderPagination();
+}
+
+function renderPagination(){
+  const total=Math.ceil(filtered.length/PER_PAGE);
+  const p=document.getElementById('pagination');
+  if(total<=1){p.innerHTML='';return;}
+  let html='';
+  const prev=currentPage>1?`<button class="page-btn" onclick="goPage(${currentPage-1})">‹</button>`:`<button class="page-btn" disabled style="opacity:.3">‹</button>`;
+  const next=currentPage<total?`<button class="page-btn" onclick="goPage(${currentPage+1})">›</button>`:`<button class="page-btn" disabled style="opacity:.3">›</button>`;
+  html+=prev;
+  for(let i=1;i<=total;i++){
+    if(i===1||i===total||Math.abs(i-currentPage)<=1){
+      html+=`<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if(Math.abs(i-currentPage)===2){
+      html+=`<div class="page-dots">…</div>`;
+    }
+  }
+  html+=next;
+  p.innerHTML=html;
+  addHover(p.querySelectorAll('button'));
+}
+
+function goPage(n){currentPage=n;render();window.scrollTo({top:240,behavior:'smooth'});}
+
+// --- Cart ---
+function addToCart(book){
+  const idx=cart.findIndex(i=>i._id===book._id);
+  if(idx>-1)cart[idx].qty=(cart[idx].qty||1)+1;
+  else cart.push({...book,qty:1});
+  localStorage.setItem('cart',JSON.stringify(cart));
+  updateCartBadge();
+  showFlash(`Đã thêm "${book.title}" vào giỏ hàng`);
+}
+function updateCartBadge(){document.getElementById('cartBadge').textContent=cart.reduce((s,i)=>s+(i.qty||1),0);}
+function toggleWish(id){showFlash('Đã thêm vào danh sách yêu thích ♥');}
+
+// Flash
+function showFlash(msg){
+  let f=document.getElementById('flash');
+  if(!f){f=document.createElement('div');f.id='flash';f.style.cssText='position:fixed;bottom:32px;right:32px;background:var(--ink);color:var(--cream);padding:12px 22px;font-size:.72rem;letter-spacing:.06em;z-index:999;transform:translateY(20px);opacity:0;transition:all .3s';document.body.appendChild(f);}
+  f.textContent=msg;
+  requestAnimationFrame(()=>{f.style.transform='translateY(0)';f.style.opacity='1';});
+  clearTimeout(f._t);f._t=setTimeout(()=>{f.style.transform='translateY(20px)';f.style.opacity='0';},2800);
+}
+
+// View toggle
+function setView(v){
+  const grid=document.getElementById('booksGrid');
+  grid.classList.toggle('list-view',v==='list');
+  document.getElementById('gridViewBtn').classList.toggle('active',v==='grid');
+  document.getElementById('listViewBtn').classList.toggle('active',v==='list');
+}
+
+function fmtPrice(p){return new Intl.NumberFormat('vi-VN').format(p)+' ₫'}
+
+init();
+</script>
+</body>
+</html>

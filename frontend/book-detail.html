@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookStore — Chi Tiết Sách</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--ink:#1a1410;--cream:#f5f0e8;--gold:#b8965a;--gold-lt:#d4af74;--warm:#e8dece;--muted:#7a6e62;--border:rgba(184,150,90,.18)}
+    body{font-family:'Josefin Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;cursor:none}
+    #cursor{width:10px;height:10px;background:var(--gold);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
+    #cursor.hovered{width:26px;height:26px;background:transparent;border:1.5px solid var(--gold)}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(245,240,232,.94);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--border)}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:var(--ink);letter-spacing:.04em;text-decoration:none}
+    .nav-logo span{color:var(--gold)}
+    .nav-links{display:flex;gap:32px;list-style:none}
+    .nav-links a{text-decoration:none;color:var(--ink);font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;transition:color .2s}
+    .nav-links a:hover{color:var(--gold)}
+    .nav-actions{display:flex;gap:18px;align-items:center}
+    .nav-icon{background:none;border:none;cursor:none;position:relative}
+    .nav-icon svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.5}
+    .badge{position:absolute;top:-5px;right:-5px;width:15px;height:15px;background:var(--gold);border-radius:50%;font-size:.58rem;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:center}
+
+    /* breadcrumb */
+    .breadcrumb{margin-top:72px;padding:20px 80px;display:flex;gap:10px;align-items:center;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+    .breadcrumb a{color:var(--muted);text-decoration:none;transition:color .2s}
+    .breadcrumb a:hover{color:var(--gold)}
+    .breadcrumb span{color:var(--muted)}
+    .breadcrumb .current{color:var(--ink)}
+
+    /* MAIN */
+    .detail-wrap{display:grid;grid-template-columns:1fr 1fr;gap:72px;padding:52px 80px 80px;max-width:1400px;margin:0 auto}
+
+    /* LEFT — image */
+    .img-section{position:sticky;top:100px;align-self:start;z-index:1}
+    .main-img{position:relative;aspect-ratio:2/3;overflow:hidden;margin-bottom:16px;max-width:420px}
+    .main-img img{width:100%;height:100%;object-fit:cover;transition:transform .8s}
+    .main-img:hover img{transform:scale(1.04)}
+    .img-badge{position:absolute;top:16px;left:16px;background:var(--gold);color:var(--ink);font-size:.58rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px}
+    .thumb-row{display:flex;gap:10px;max-width:420px}
+    .thumb{width:72px;height:96px;overflow:hidden;cursor:none;border:2px solid transparent;transition:border-color .2s;flex-shrink:0}
+    .thumb.active{border-color:var(--gold)}
+    .thumb img{width:100%;height:100%;object-fit:cover}
+
+    /* RIGHT — info */
+    .info-section{}
+    .info-cat{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px}
+    .info-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.8rem);font-weight:300;line-height:1.1;margin-bottom:8px}
+    .info-author{font-size:.78rem;color:var(--muted);letter-spacing:.06em;margin-bottom:18px}
+    .info-author a{color:var(--gold);text-decoration:none}
+
+    .rating-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+    .stars-big{color:var(--gold);font-size:1rem;letter-spacing:2px}
+    .rating-val{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--ink)}
+    .rating-cnt{font-size:.68rem;color:var(--muted)}
+    .sold-cnt{font-size:.68rem;color:var(--muted);margin-left:8px;padding-left:16px;border-left:1px solid var(--border)}
+
+    .price-section{margin-bottom:28px}
+    .price-big{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--gold)}
+    .price-orig{font-size:.9rem;color:var(--muted);text-decoration:line-through;margin-left:10px}
+    .price-save{display:inline-block;background:var(--ink);color:var(--gold);font-size:.6rem;font-weight:600;letter-spacing:.12em;padding:3px 10px;margin-left:10px;vertical-align:middle}
+
+    /* qty */
+    .qty-row{display:flex;align-items:center;gap:20px;margin-bottom:28px}
+    .qty-label{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+    .qty-ctrl{display:flex;align-items:center;border:1px solid var(--border)}
+    .qty-btn{width:38px;height:38px;border:none;background:none;cursor:none;font-size:1.1rem;color:var(--ink);transition:background .2s;display:flex;align-items:center;justify-content:center}
+    .qty-btn:hover{background:var(--warm)}
+    .qty-num{width:44px;text-align:center;font-size:.85rem;border:none;background:transparent;color:var(--ink);font-family:'Josefin Sans',sans-serif;outline:none}
+    .stock-info{font-size:.65rem;color:var(--muted);letter-spacing:.08em}
+    .stock-info.low{color:#c0392b}
+
+    /* CTA buttons */
+    .cta-row{display:flex;gap:12px;margin-bottom:28px}
+    .btn-add-cart{flex:1;background:var(--ink);color:var(--cream);border:none;padding:15px 20px;font-family:'Josefin Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;cursor:none;transition:background .3s;display:flex;align-items:center;justify-content:center;gap:10px}
+    .btn-add-cart:hover{background:var(--gold)}
+    .btn-add-cart svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5}
+    .btn-wish{width:52px;border:1px solid var(--border);background:none;cursor:none;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s}
+    .btn-wish:hover,.btn-wish.active{background:var(--ink);border-color:var(--ink)}
+    .btn-wish svg{width:17px;height:17px;stroke:var(--ink);fill:none;stroke-width:1.5;transition:stroke .2s}
+    .btn-wish:hover svg,.btn-wish.active svg{stroke:var(--cream)}
+    .btn-buy-now{flex:1;background:var(--gold);color:var(--ink);border:none;padding:15px 20px;font-family:'Josefin Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;cursor:none;transition:opacity .3s}
+    .btn-buy-now:hover{opacity:.85}
+
+    /* meta */
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);margin-bottom:28px}
+    .meta-item{padding:12px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+    .meta-item:nth-child(even){border-right:none}
+    .meta-item:nth-last-child(-n+2){border-bottom:none}
+    .meta-key{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+    .meta-val{font-size:.75rem;color:var(--ink);font-weight:600}
+
+    /* TABS */
+    .tabs-wrap{margin-top:48px;grid-column:1/-1;position:relative;z-index:2;background:var(--cream);padding-top:4px}
+    .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:36px;background:var(--cream);position:relative;z-index:2}
+    .tab-nav-btn{background:none;border:none;cursor:none;font-family:'Josefin Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:0 28px 16px 0;position:relative;transition:color .2s}
+    .tab-nav-btn::after{content:'';position:absolute;bottom:-1px;left:0;width:calc(100% - 28px);height:2px;background:var(--gold);transform:scaleX(0);transition:transform .3s;transform-origin:left}
+    .tab-nav-btn.active{color:var(--ink)}
+    .tab-nav-btn.active::after{transform:scaleX(1)}
+
+    .tab-pane{display:none}
+    .tab-pane.active{display:block;animation:fadeIn .3s ease}
+
+    /* description */
+    .desc-text{font-size:.82rem;line-height:1.9;color:var(--muted);letter-spacing:.04em;max-width:680px}
+    .desc-text p+p{margin-top:14px}
+
+    /* reviews */
+    .reviews-summary{display:flex;gap:48px;align-items:center;padding:28px 0;border-bottom:1px solid var(--border);margin-bottom:28px}
+    .review-score{text-align:center}
+    .score-big{font-family:'Cormorant Garamond',serif;font-size:4rem;font-weight:300;color:var(--ink);line-height:1}
+    .score-stars{color:var(--gold);font-size:.9rem;letter-spacing:2px;margin:6px 0}
+    .score-cnt{font-size:.65rem;color:var(--muted)}
+    .score-bars{flex:1;display:flex;flex-direction:column;gap:8px}
+    .bar-row{display:flex;align-items:center;gap:12px}
+    .bar-label{font-size:.65rem;color:var(--muted);width:8px;text-align:right}
+    .bar-track{flex:1;height:5px;background:var(--warm);border-radius:2px;overflow:hidden}
+    .bar-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .6s}
+    .bar-cnt{font-size:.62rem;color:var(--muted);width:24px}
+
+    .review-list{display:flex;flex-direction:column;gap:24px}
+    .review-item{padding-bottom:24px;border-bottom:1px solid var(--border)}
+    .review-item:last-child{border-bottom:none}
+    .review-header{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+    .review-avatar{width:38px;height:38px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--ink);font-weight:600}
+    .review-name{font-size:.72rem;font-weight:600;color:var(--ink);letter-spacing:.06em}
+    .review-date{font-size:.62rem;color:var(--muted);margin-top:2px}
+    .review-stars{color:var(--gold);font-size:.72rem;letter-spacing:1px;margin-left:auto}
+    .review-text{font-size:.78rem;color:var(--muted);line-height:1.7;letter-spacing:.04em}
+
+    /* write review */
+    .write-review{background:var(--warm);padding:28px;margin-top:28px}
+    .write-review h4{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:300;margin-bottom:18px}
+    .star-select{display:flex;gap:6px;margin-bottom:16px;font-size:1.4rem;color:var(--warm);-webkit-text-stroke:1px var(--gold)}
+    .star-select span{cursor:none;transition:color .1s;-webkit-text-stroke:1px var(--gold)}
+    .star-select span.lit{color:var(--gold)}
+    .review-input{width:100%;background:transparent;border:1px solid var(--border);padding:12px 16px;font-family:'Josefin Sans',sans-serif;font-size:.78rem;color:var(--ink);outline:none;resize:vertical;min-height:100px;letter-spacing:.04em;transition:border-color .3s;margin-bottom:12px}
+    .review-input:focus{border-color:var(--gold)}
+    .btn-review{background:var(--ink);color:var(--cream);border:none;padding:11px 28px;cursor:none;font-family:'Josefin Sans',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;transition:background .3s}
+    .btn-review:hover{background:var(--gold)}
+
+    /* related */
+    .related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+    .rel-card{cursor:none}
+    .rel-cover{aspect-ratio:2/3;overflow:hidden;margin-bottom:12px}
+    .rel-cover img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+    .rel-card:hover .rel-cover img{transform:scale(1.05)}
+    .rel-cat{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:4px}
+    .rel-title{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px}
+    .rel-price{font-family:'Cormorant Garamond',serif;font-size:.9rem;color:var(--gold)}
+
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+    .reveal.visible{opacity:1;transform:translateY(0)}
+  </style>
+</head>
+<body>
+<div id="cursor"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html"><span>Book</span> Store</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Trang Chủ</a></li>
+    <li><a href="books.html">Danh Mục</a></li>
+    <li><a href="#">Sách Mới</a></li>
+    <li><a href="#">Khuyến Mãi</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
+    <button class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+    <button class="nav-icon" style="position:relative">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span class="badge" id="cartBadge">0</span>
+    </button>
+  </div>
+</nav>
+
+<div class="breadcrumb" id="breadcrumb">
+  <a href="index.html">Trang chủ</a><span>/</span>
+  <a href="books.html">Sách</a><span>/</span>
+  <span class="current" id="bcTitle">Đang tải…</span>
+</div>
+
+<div class="detail-wrap" id="detailWrap">
+  <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted);font-size:.8rem;letter-spacing:.1em">Đang tải thông tin sách…</div>
+</div>
+
+<script>
+const cur=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px'});
+function addH(els){els.forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('hovered'));el.addEventListener('mouseleave',()=>cur.classList.remove('hovered'))})}
+
+let cart=JSON.parse(localStorage.getItem('cart')||'[]');
+let qty=1, wished=false, selectedRating=0;
+
+const SAMPLE={
+  _id:'1',title:'Nhà Giả Kim',author:'Paulo Coelho',category:{name:'Văn Học'},
+  price:89000,originalPrice:120000,rating:4.8,sold:1240,stock:42,
+  publisher:'NXB Hội Nhà Văn',year:2023,pages:228,language:'Tiếng Việt',isbn:'978-604-2-20484-7',
+  image:'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&q=80',
+  badge:'Bestseller',
+  description:`<p>Nhà giả kim (El Alquimista) là một cuốn tiểu thuyết của nhà văn người Brazil Paulo Coelho, lần đầu tiên được xuất bản vào năm 1988 bởi nhà xuất bản HarperCollins.</p>
+  <p>Cuốn sách kể về Santiago, một cậu bé chăn cừu người Tây Ban Nha, người mơ thấy kho báu chôn ở Ai Cập. Trên hành trình theo đuổi giấc mơ của mình, chàng học được ý nghĩa thực sự của cuộc sống và tình yêu từ những người xung quanh và cả vũ trụ.</p>
+  <p>Đây là cuốn sách được dịch nhiều nhất trong lịch sử của Brazil và là một trong những cuốn sách bán chạy nhất mọi thời đại với hơn 65 triệu bản được bán ra trên toàn thế giới.</p>`,
+  reviews:[
+    {name:'Anh Tuấn',date:'15/03/2025',rating:5,text:'Một trong những cuốn sách hay nhất tôi từng đọc. Triết lý sâu sắc, văn phong đẹp và đầy cảm hứng. Đọc xong khiến tôi nhìn lại bản thân và cuộc sống theo một cách hoàn toàn mới.'},
+    {name:'Minh Châu',date:'02/03/2025',rating:5,text:'Tuyệt vời! Cuốn sách nhỏ nhưng chứa đựng cả vũ trụ. Đọc đi đọc lại nhiều lần vẫn không thấy chán, mỗi lần lại khám phá ra một tầng ý nghĩa mới.'},
+    {name:'Lan Phương',date:'20/02/2025',rating:4,text:'Sách rất hay, bản dịch tiếng Việt cũng khá tốt. Giao hàng nhanh, sách được đóng gói cẩn thận. Sẽ tiếp tục mua ở đây.'},
+  ],
+  related:[
+    {_id:'2',title:'Đắc Nhân Tâm',author:'Dale Carnegie',category:{name:'Tâm Lý'},price:75000,image:'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=70'},
+    {_id:'3',title:'Tư Duy Nhanh Và Chậm',author:'Daniel Kahneman',category:{name:'Kinh Tế'},price:95000,image:'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=70'},
+    {_id:'4',title:'Lược Sử Loài Người',author:'Yuval Noah Harari',category:{name:'Khoa Học'},price:110000,image:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=70'},
+    {_id:'8',title:'Nhà Thờ Đức Bà Paris',author:'Victor Hugo',category:{name:'Văn Học'},price:92000,image:'https://images.unsplash.com/photo-1568667256549-094345857637?w=400&q=70'},
+  ]
+};
+
+async function init(){
+  const params=new URLSearchParams(location.search);
+  const id=params.get('id')||'1';
+  let book=SAMPLE;
+  try{
+    const res=await fetch(`http://localhost:3000/api/books/${id}`);
+    if(res.ok)book=await res.json();
+  }catch{}
+  render(book);
+  loadReviews(book._id);
+  updateCartBadge();
+}
+
+function render(b){
+  const imgSrc = b.image
+    ? (b.image.startsWith('http') ? b.image : `http://localhost:3000/uploads/${b.image}`)
+    : 'https://via.placeholder.com/600x900?text=No+Image';
+  document.title=`BookStore — ${b.title}`;
+  document.getElementById('bcTitle').textContent=b.title;
+  const save=b.originalPrice?Math.round((1-b.price/b.originalPrice)*100):0;
+  const ratingDist=[0,0,5,15,30,50]; // fake distribution %
+  const relCards=(b.related||[]).map(r=>`
+    <div class="rel-card" onclick="location.href='book-detail.html?id=${r._id}'">
+      <div class="rel-cover"><img src="${r.image}" alt="${r.title}" loading="lazy"/></div>
+      <div class="rel-cat">${r.category?.name||''}</div>
+      <div class="rel-title">${r.title}</div>
+      <div class="rel-price">${fmt(r.price)}</div>
+    </div>`).join('');
+
+  document.getElementById('detailWrap').innerHTML=`
+    <!-- LEFT -->
+    <div class="img-section reveal">
+      <div class="main-img">
+        <img src="${imgSrc}" alt="${b.title}" id="mainImg"/>
+        ${b.badge?`<div class="img-badge">${b.badge}</div>`:''}
+      </div>
+      <div class="thumb-row">
+        <div class="thumb active" onclick="changeImg('${imgSrc}',this)">
+  <img src="${imgSrc}" alt=""/>
+</div>
+        <div class="thumb" onclick="changeImg('https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&q=80',this)"><img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=120&q=70" alt=""/></div>
+        <div class="thumb" onclick="changeImg('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&q=80',this)"><img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=120&q=70" alt=""/></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="info-section reveal" style="transition-delay:.1s">
+      <div class="info-cat">${b.category?.name||''}</div>
+      <h1 class="info-title">${b.title}</h1>
+      <div class="info-author">Tác giả: <a href="#">${b.author}</a></div>
+
+      <div class="rating-row">
+  <span class="stars-big">
+    ${'★'.repeat(Math.round(b.rating || 0))}${'☆'.repeat(5 - Math.round(b.rating || 0))}
+  </span>
+  <span class="rating-val" id="topRatingVal">${b.rating || 0}</span>
+  <span class="rating-cnt" id="topReviewCnt">(${b.numReviews || 0} đánh giá)</span>
+  <span class="sold-cnt">Đã bán: ${(b.sold || 0).toLocaleString('vi')}</span>
+</div>
+
+      <div class="price-section">
+        <span class="price-big">${fmt(b.price)}</span>
+        ${b.originalPrice?`<span class="price-orig">${fmt(b.originalPrice)}</span><span class="price-save">-${save}%</span>`:''}
+      </div>
+
+      <div class="qty-row">
+        <span class="qty-label">Số lượng</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input class="qty-num" type="number" id="qtyInput" value="1" min="1" max="${b.stock||99}" onchange="qty=+this.value"/>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+        <span class="stock-info${b.stock<10?' low':''}">${b.stock<10?`Chỉ còn ${b.stock} cuốn!`:`Còn ${b.stock} cuốn`}</span>
+      </div>
+
+      <div class="cta-row">
+        <button class="btn-add-cart" onclick="addCart()">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Thêm Vào Giỏ
+        </button>
+        <button class="btn-wish" id="wishBtn" onclick="toggleWish()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-width="1.5"/></svg>
+        </button>
+      </div>
+      <button class="btn-buy-now" style="width:100%;margin-bottom:24px" onclick="buyNow()">Mua Ngay</button>
+
+      <div class="meta-grid">
+        <div class="meta-item"><div class="meta-key">Nhà Xuất Bản</div><div class="meta-val">${b.publisher||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Năm Xuất Bản</div><div class="meta-val">${b.year||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Số Trang</div><div class="meta-val">${b.pages||'—'} trang</div></div>
+        <div class="meta-item"><div class="meta-key">Ngôn Ngữ</div><div class="meta-val">${b.language||'Tiếng Việt'}</div></div>
+        <div class="meta-item"><div class="meta-key">ISBN</div><div class="meta-val">${b.isbn||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Thể Loại</div><div class="meta-val">${b.category?.name||'—'}</div></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-wrap">
+      <div class="tab-nav">
+        <button class="tab-nav-btn active" onclick="switchTab('desc',this)">Mo Ta</button>
+<button class="tab-nav-btn" onclick="switchTab('review',this)">Danh Gia (${(b.reviews||[]).length})</button>
+<button class="tab-nav-btn" onclick="switchTab('related',this)">Sach Lien Quan</button>
+      </div>
+
+      <div class="tab-pane active" id="pane-desc">
+        <div class="desc-text">${b.description||'Chưa có mô tả.'}</div>
+      </div>
+
+      <div class="tab-pane" id="pane-review">
+        <div class="reviews-summary">
+          <div class="review-score">
+            <div class="score-big">${b.rating || 0}</div>
+            <div class="score-stars">${'★'.repeat(Math.round(b.rating || 0))}</div>
+            <div class="score-cnt">${b.numReviews || 0} đánh giá</div>  
+          </div>
+          <div class="score-bars">
+            ${[5,4,3,2,1].map((s,i)=>`
+              <div class="bar-row">
+                <span class="bar-label">${s}</span>
+                <div class="bar-track"><div class="bar-fill" style="width:${ratingDist[s]}%"></div></div>
+                <span class="bar-cnt">${ratingDist[s]}%</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="review-list">
+          ${(b.reviews||[]).map(r=>`
+            <div class="review-item">
+              <div class="review-header">
+                <div class="review-avatar">${r.name[0]}</div>
+                <div><div class="review-name">${r.name}</div><div class="review-date">${r.date}</div></div>
+                <div class="review-stars">${'★'.repeat(r.rating)}</div>
+              </div>
+              <p class="review-text">${r.text}</p>
+            </div>`).join('')}
+        </div>
+        <div class="write-review">
+          <h4>Viết đánh giá của bạn</h4>
+          <div class="star-select" id="starSel">
+            ${[1,2,3,4,5].map(i=>`<span onclick="setRating(${i})">${i<=selectedRating?'★':'☆'}</span>`).join('')}
+          </div>
+          <textarea class="review-input" id="reviewText" placeholder="Chia sẻ cảm nhận của bạn về cuốn sách này…"></textarea>
+          <button class="btn-review" onclick="submitReview()">Gửi Đánh Giá</button>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="pane-related">
+        <div class="related-grid">${relCards}</div>
+      </div>
+    </div>
+  `;
+
+  // Reveal
+  setTimeout(()=>{document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'))},50);
+  addH(document.querySelectorAll('a,button,input,textarea,.thumb,.rel-card'));
+  window._book=b;
+}
+
+function changeImg(src,el){
+  document.getElementById('mainImg').src=src;
+  document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+function changeQty(d){qty=Math.max(1,qty+d);const inp=document.getElementById('qtyInput');if(inp)inp.value=qty;}
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+}
+function setRating(r){
+  selectedRating=r;
+  document.getElementById('starSel').innerHTML=[1,2,3,4,5].map(i=>`<span onclick="setRating(${i})">${i<=r?'★':'☆'}</span>`).join('');
+}
+function addCart(){
+  const b=window._book; if(!b)return;
+  const idx=cart.findIndex(i=>i._id===b._id);
+  if(idx>-1)cart[idx].qty=(cart[idx].qty||1)+qty;
+  else cart.push({...b,qty});
+  localStorage.setItem('cart',JSON.stringify(cart));
+  updateCartBadge();
+  flash(`Đã thêm ${qty} cuốn "${b.title}" vào giỏ hàng`);
+}
+function buyNow(){addCart();location.href='cart.html';}
+function toggleWish(){wished=!wished;document.getElementById('wishBtn').classList.toggle('active',wished);flash(wished?'Đã thêm vào yêu thích ♥':'Đã xóa khỏi yêu thích');}
+async function submitReview() {
+    const txt = document.getElementById('reviewText').value.trim();
+    if (!selectedRating) { flash('Vui lòng chọn số sao'); return; }
+    if (!txt) { flash('Vui lòng nhập nội dung đánh giá'); return; }
+
+    const token = localStorage.getItem('token');
+    if (!token) { flash('Vui lòng đăng nhập để đánh giá!'); return; }
+
+    try {
+        const res = await fetch(`http://localhost:3000/api/reviews/${window._book._id}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ rating: selectedRating, comment: txt })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            flash('Đánh giá của bạn đã được gửi, cảm ơn!');
+            document.getElementById('reviewText').value = '';
+            selectedRating = 0; setRating(0);
+            loadReviews(window._book._id); // Load lại danh sách
+        } else {
+            flash(data.message || 'Lỗi gửi đánh giá');
+        }
+    } catch { flash('Lỗi kết nối server'); }
+}
+
+async function loadReviews(bookId) {
+    try {
+        const res = await fetch(`http://localhost:3000/api/reviews/${bookId}`);
+        const reviews = await res.json();
+
+        // Tính rating distribution
+        const dist = {1:0, 2:0, 3:0, 4:0, 5:0};
+        reviews.forEach(r => dist[r.rating]++);
+        const total = reviews.length || 1;
+
+        // Cập nhật danh sách
+        document.querySelector('.review-list').innerHTML = reviews.map(r => `
+            <div class="review-item">
+                <div class="review-header">
+                    <div class="review-avatar">${(r.user?.username || r.user?.email || 'U')[0].toUpperCase()}</div>
+                    <div>
+                        <div class="review-name">${r.user?.username || r.user?.email || 'Ẩn danh'}</div>
+                        <div class="review-date">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</div>
+                    </div>
+                    <div class="review-stars">${'★'.repeat(r.rating)}</div>
+                </div>
+                <p class="review-text">${r.comment || ''}</p>
+            </div>`).join('') || '<p style="color:var(--muted);font-size:.75rem">Chưa có đánh giá nào.</p>';
+
+        // Cập nhật score bars
+        document.querySelector('.score-big').textContent = reviews.length 
+            ? (reviews.reduce((s,r) => s + r.rating, 0) / reviews.length).toFixed(1) 
+            : '0';
+        document.querySelector('.score-cnt').textContent = `${reviews.length} đánh giá`;
+        document.querySelectorAll('.bar-fill').forEach((bar, i) => {
+            const star = 5 - i;
+            const pct = Math.round((dist[star] / total) * 100);
+            bar.style.width = pct + '%';
+            bar.closest('.bar-row').querySelector('.bar-cnt').textContent = pct + '%';
+        });
+        const avg = reviews.length 
+            ? (reviews.reduce((s,r) => s + r.rating, 0) / reviews.length).toFixed(1) 
+            : 0;
+
+        const topRating = document.getElementById('topRatingVal');
+        const topCnt = document.getElementById('topReviewCnt');
+
+        if(topRating) topRating.textContent = avg;
+        if(topCnt) topCnt.textContent = `(${reviews.length} đánh giá)`;
+    } catch(err) { console.error(err); }
+}
+
+function updateCartBadge(){document.getElementById('cartBadge').textContent=cart.reduce((s,i)=>s+(i.qty||1),0);}
+function flash(msg){
+  let f=document.getElementById('flash');
+  if(!f){f=document.createElement('div');f.id='flash';f.style.cssText='position:fixed;bottom:32px;right:32px;background:var(--ink);color:var(--cream);padding:12px 22px;font-size:.72rem;letter-spacing:.06em;z-index:9999;transform:translateY(20px);opacity:0;transition:all .3s';document.body.appendChild(f);}
+  f.textContent=msg;
+  requestAnimationFrame(()=>{f.style.transform='translateY(0)';f.style.opacity='1';});
+  clearTimeout(f._t);f._t=setTimeout(()=>{f.style.transform='translateY(20px)';f.style.opacity='0';},2800);
+}
+function fmt(p){return new Intl.NumberFormat('vi-VN').format(p)+' ₫'}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookStore — Đăng Nhập</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --ink:#1a1410;--cream:#f5f0e8;--gold:#b8965a;--gold-lt:#d4af74;
+      --warm:#e8dece;--muted:#7a6e62;--red:#c0392b;--green:#27ae60;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Josefin Sans',sans-serif;background:var(--ink);color:var(--cream);
+      min-height:100vh;overflow-x:hidden;cursor:none}
+
+    #cursor{width:10px;height:10px;background:var(--gold);border-radius:50%;
+      position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
+      transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
+    #cursor.hovered{width:26px;height:26px;background:transparent;border:1.5px solid var(--gold)}
+
+    /* layout */
+    .page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+
+    /* LEFT PANEL */
+    .panel-left{
+      position:relative;overflow:hidden;
+      background:linear-gradient(160deg,#0d0a07 0%,#1f1610 60%,#2a1c0e 100%);
+      display:flex;flex-direction:column;justify-content:space-between;padding:48px 56px;
+    }
+    .panel-left::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 30% 60%,rgba(184,150,90,.12) 0%,transparent 65%);
+    }
+    .logo{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;
+      color:var(--cream);letter-spacing:.04em;text-decoration:none;z-index:1;position:relative}
+    .logo span{color:var(--gold)}
+
+    .panel-quote{position:relative;z-index:1}
+    .quote-mark{font-family:'Cormorant Garamond',serif;font-size:6rem;color:var(--gold);
+      opacity:.25;line-height:.7;margin-bottom:8px}
+    .quote-text{font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,2.5vw,2.2rem);
+      font-weight:300;font-style:italic;line-height:1.35;color:var(--cream);margin-bottom:20px}
+    .quote-author{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+
+    .panel-books{
+      position:absolute;bottom:0;right:0;width:55%;
+      display:grid;grid-template-columns:1fr 1fr;gap:2px;opacity:.35;
+    }
+    .panel-books img{width:100%;aspect-ratio:2/3;object-fit:cover;filter:sepia(.4)}
+
+    .panel-features{position:relative;z-index:1;display:flex;flex-direction:column;gap:16px}
+    .feat{display:flex;align-items:center;gap:14px}
+    .feat-icon{width:36px;height:36px;border:1px solid rgba(184,150,90,.35);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .feat-icon svg{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:1.5}
+    .feat-text{font-size:.72rem;color:rgba(245,240,232,.6);letter-spacing:.06em}
+
+    /* RIGHT PANEL */
+    .panel-right{
+      background:var(--cream);display:flex;align-items:center;justify-content:center;
+      padding:64px 72px;
+    }
+    .auth-box{width:100%;max-width:420px}
+
+    /* tabs */
+    .auth-tabs{display:flex;gap:0;margin-bottom:44px;border-bottom:1px solid rgba(184,150,90,.2)}
+    .tab-btn{
+      flex:1;background:none;border:none;cursor:none;
+      font-family:'Josefin Sans',sans-serif;font-size:.7rem;font-weight:600;
+      letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+      padding:0 0 16px;position:relative;transition:color .3s;
+    }
+    .tab-btn.active{color:var(--ink)}
+    .tab-btn::after{
+      content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;
+      background:var(--gold);transform:scaleX(0);transition:transform .3s;
+    }
+    .tab-btn.active::after{transform:scaleX(1)}
+
+    .auth-form{display:none;animation:fadeUp .4s ease forwards}
+    .auth-form.active{display:block}
+
+    .form-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;
+      color:var(--ink);margin-bottom:6px}
+    .form-title em{font-style:italic;color:var(--gold)}
+    .form-sub{font-size:.74rem;color:var(--muted);letter-spacing:.05em;
+      margin-bottom:32px;line-height:1.7}
+
+    /* inputs */
+    .field{margin-bottom:20px;position:relative}
+    .field label{display:block;font-size:.64rem;font-weight:600;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .field input{
+      width:100%;background:transparent;
+      border:none;border-bottom:1px solid rgba(26,20,16,.2);
+      padding:10px 0;font-family:'Josefin Sans',sans-serif;font-size:.85rem;
+      color:var(--ink);outline:none;letter-spacing:.04em;
+      transition:border-color .3s;
+    }
+    .field input:focus{border-color:var(--gold)}
+    .field input::placeholder{color:rgba(122,110,98,.5)}
+    .field-icon{position:absolute;right:0;bottom:10px;cursor:none}
+    .field-icon svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:1.5}
+
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+    /* validation */
+    .field .err{font-size:.62rem;color:var(--red);margin-top:5px;display:none;letter-spacing:.05em}
+    .field.error input{border-color:var(--red)}
+    .field.error .err{display:block}
+    .field.success input{border-color:var(--green)}
+
+    .forgot{font-size:.68rem;color:var(--gold);text-decoration:none;letter-spacing:.08em;
+      display:block;text-align:right;margin-top:-12px;margin-bottom:28px;transition:opacity .2s}
+    .forgot:hover{opacity:.7}
+
+    .btn-submit{
+      width:100%;background:var(--ink);color:var(--cream);border:none;
+      padding:15px;font-family:'Josefin Sans',sans-serif;
+      font-size:.72rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+      cursor:none;transition:background .3s;margin-bottom:28px;position:relative;overflow:hidden;
+    }
+    .btn-submit:hover{background:var(--gold)}
+    .btn-submit .spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+      position:absolute;right:18px;top:50%;transform:translateY(-50%)}
+    .btn-submit.loading .btn-text{opacity:0}
+    .btn-submit.loading .spinner{display:block}
+
+    .divider-or{text-align:center;position:relative;margin-bottom:24px}
+    .divider-or::before{content:'';position:absolute;inset:50% 0 auto;height:1px;
+      background:rgba(26,20,16,.12)}
+    .divider-or span{position:relative;background:var(--cream);
+      padding:0 14px;font-size:.65rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+
+    .social-logins{display:flex;gap:12px;margin-bottom:28px}
+    .social-btn{
+      flex:1;border:1px solid rgba(26,20,16,.15);background:none;
+      padding:11px;cursor:none;display:flex;align-items:center;justify-content:center;gap:10px;
+      font-family:'Josefin Sans',sans-serif;font-size:.68rem;color:var(--muted);
+      letter-spacing:.08em;transition:border-color .2s,color .2s;
+    }
+    .social-btn:hover{border-color:var(--gold);color:var(--ink)}
+    .social-btn svg{width:17px;height:17px}
+
+    .switch-msg{text-align:center;font-size:.7rem;color:var(--muted);letter-spacing:.06em}
+    .switch-msg a{color:var(--gold);text-decoration:none;cursor:none;font-weight:600}
+
+    /* strength bar */
+    .strength-bar{height:3px;background:rgba(26,20,16,.1);margin-top:8px;border-radius:2px;overflow:hidden}
+    .strength-fill{height:100%;width:0;border-radius:2px;transition:width .3s,background .3s}
+
+    /* toast */
+    .toast{
+      position:fixed;top:28px;right:28px;z-index:9999;
+      background:var(--ink);color:var(--cream);
+      padding:14px 22px;display:flex;align-items:center;gap:12px;
+      transform:translateX(120%);transition:transform .4s cubic-bezier(.25,.46,.45,.94);
+      min-width:260px;max-width:360px;
+    }
+    .toast.show{transform:translateX(0)}
+    .toast-icon{width:20px;height:20px;flex-shrink:0}
+    .toast-icon svg{width:20px;height:20px;stroke:var(--gold);fill:none;stroke-width:2}
+    .toast-text{font-size:.72rem;letter-spacing:.06em;line-height:1.5}
+    .toast-close{margin-left:auto;cursor:none;opacity:.5;transition:opacity .2s;background:none;border:none;color:inherit}
+    .toast-close:hover{opacity:1}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div id="cursor"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+  <div class="toast-text" id="toastMsg">Đăng nhập thành công!</div>
+  <button class="toast-close" onclick="hideToast()">✕</button>
+</div>
+
+<div class="page">
+  <!-- LEFT -->
+  <div class="panel-left">
+    <a class="logo" href="index.html"><span>Book</span> Store</a>
+
+    <div class="panel-quote">
+      <div class="quote-mark">"</div>
+      <p class="quote-text">Sách là gương của tâm hồn — mỗi trang là một hành trình bạn chưa từng đặt chân đến.</p>
+      <div class="quote-author">— Jorge Luis Borges</div>
+    </div>
+
+    <div class="panel-books">
+      <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=70" alt=""/>
+      <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&q=70" alt=""/>
+    </div>
+
+    <div class="panel-features">
+      <div class="feat">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="feat-text">Bảo mật thông tin tuyệt đối</div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <div class="feat-text">Giao hàng nhanh trong 24h</div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <div class="feat-text">Hơn 12.000 đầu sách chính hãng</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right">
+    <div class="auth-box">
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">Đăng Nhập</button>
+        <button class="tab-btn" onclick="switchTab('register')">Đăng Ký</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form active" id="loginForm">
+        <h1 class="form-title">Chào mừng <em>trở lại</em></h1>
+        <p class="form-sub">Đăng nhập để tiếp tục hành trình khám phá tri thức của bạn.</p>
+
+        <div class="field" id="f-email-l">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"/>
+          <div class="err">Email không hợp lệ</div>
+        </div>
+
+        <div class="field" id="f-pass-l">
+          <label>Mật Khẩu</label>
+          <input type="password" id="loginPass" placeholder="••••••••"/>
+          <button class="field-icon" onclick="togglePass('loginPass',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" id="eyeL"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <div class="err">Mật khẩu cần ít nhất 6 ký tự</div>
+        </div>
+
+        <a href="#" class="forgot">Quên mật khẩu?</a>
+
+        <button class="btn-submit" id="loginBtn" onclick="handleLogin()">
+          <span class="btn-text">Đăng Nhập</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="divider-or"><span>Hoặc</span></div>
+        <div class="social-logins">
+          <a href="http://localhost:3000/api/auth/google" style="flex: 1; text-decoration: none; cursor: none;">
+    <button class="social-btn" type="button" style="width: 100%;">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Google
+    </button>
+</a>
+          <button class="social-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Facebook
+          </button>
+        </div>
+        <p class="switch-msg">Chưa có tài khoản? <a href="#" onclick="switchTab('register')">Đăng ký ngay</a></p>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form" id="registerForm">
+        <h1 class="form-title">Tạo tài khoản <em>mới</em></h1>
+        <p class="form-sub">Tham gia cộng đồng hàng nghìn người yêu sách trên khắp Việt Nam.</p>
+
+        <div class="field-row">
+          <div class="field" id="f-fn">
+            <label>Họ</label>
+            <input type="text" id="regFname" placeholder="Nguyễn"/>
+            <div class="err">Vui lòng nhập họ</div>
+          </div>
+          <div class="field" id="f-ln">
+            <label>Tên</label>
+            <input type="text" id="regLname" placeholder="Văn A"/>
+            <div class="err">Vui lòng nhập tên</div>
+          </div>
+        </div>
+
+        <div class="field" id="f-email-r">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="your@email.com"/>
+          <div class="err">Email không hợp lệ</div>
+        </div>
+
+        <div class="field" id="f-phone">
+          <label>Số Điện Thoại</label>
+          <input type="tel" id="regPhone" placeholder="0912 345 678"/>
+          <div class="err">Số điện thoại không hợp lệ</div>
+        </div>
+
+        <div class="field" id="f-pass-r">
+          <label>Mật Khẩu</label>
+          <input type="password" id="regPass" placeholder="Tối thiểu 6 ký tự" oninput="checkStrength(this.value)"/>
+          <button class="field-icon" onclick="togglePass('regPass',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="err">Mật khẩu cần ít nhất 6 ký tự</div>
+        </div>
+
+        <div class="field" id="f-pass-c">
+          <label>Xác Nhận Mật Khẩu</label>
+          <input type="password" id="regPassC" placeholder="Nhập lại mật khẩu"/>
+          <div class="err">Mật khẩu không khớp</div>
+        </div>
+
+        <button class="btn-submit" id="regBtn" onclick="handleRegister()" style="margin-top:8px">
+          <span class="btn-text">Tạo Tài Khoản</span>
+          <div class="spinner"></div>
+        </button>
+
+        <p class="switch-msg">Đã có tài khoản? <a href="#" onclick="switchTab('login')">Đăng nhập</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Cursor
+const cur = document.getElementById('cursor');
+document.addEventListener('mousemove', e => { cur.style.left=e.clientX+'px'; cur.style.top=e.clientY+'px'; });
+document.querySelectorAll('a,button,input').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cur.classList.add('hovered'));
+  el.addEventListener('mouseleave',()=>cur.classList.remove('hovered'));
+});
+
+// Tabs
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('loginForm').classList.toggle('active', tab==='login');
+  document.getElementById('registerForm').classList.toggle('active', tab==='register');
+}
+
+// Toggle password
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+// Password strength
+function checkStrength(val) {
+  const fill = document.getElementById('strengthFill');
+  let score = 0;
+  if(val.length >= 6) score++;
+  if(val.length >= 10) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  const pct = (score/5)*100;
+  fill.style.width = pct+'%';
+  fill.style.background = score<=1?'#c0392b':score<=3?'#f39c12':'#27ae60';
+}
+
+// Validate
+function validateEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
+function validatePhone(p){return /^0[0-9]{9}$/.test(p.replace(/\s/g,''))}
+function setField(id,ok){ document.getElementById(id).classList.toggle('error',!ok); document.getElementById(id).classList.toggle('success',ok&&id!==''); }
+
+// Toast
+let toastTimer;
+function showToast(msg, ok=true){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.querySelector('svg').innerHTML = ok
+    ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+    : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),3500);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+
+// --- PHẦN ĐĂNG NHẬP (LOGIN) ---
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  let ok = true;
+
+  const eOk = validateEmail(email);
+  setField('f-email-l', eOk); if (!eOk) ok = false;
+  const pOk = pass.length >= 6;
+  setField('f-pass-l', pOk); if (!pOk) ok = false;
+  if (!ok) return;
+
+  const btn = document.getElementById('loginBtn');
+  btn.classList.add('loading');
+
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // SỬA TẠI ĐÂY: Gửi 'username' thay vì 'email' để khớp với Backend controller
+      body: JSON.stringify({ username: email, password: pass })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      localStorage.setItem('token', data.token || '');
+      localStorage.setItem('user', JSON.stringify(data.user || {}));
+      
+      showToast('Đăng nhập thành công! Đang chuyển hướng…');
+
+      // --- CỔNG PHÂN LUỒNG TỰ ĐỘNG ---
+      setTimeout(() => {
+        if (data.user.role === 'admin') {
+          // Nếu là admin thì bay thẳng vào Dashboard quản trị
+          window.location.href = 'Admin.html';
+        } else {
+          // Nếu là người dùng thường thì về trang chủ mua sách
+          window.location.href = 'index.html';
+        }
+      }, 1600);
+      
+    } else {
+      showToast(data.message || 'Email hoặc mật khẩu không đúng', false);
+    }
+  } catch (e) {
+    console.error("Lỗi kết nối:", e);
+    showToast('Không thể kết nối tới server backend!', false);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+// --- PHẦN ĐĂNG KÝ (REGISTER) ---
+async function handleRegister() {
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const passC = document.getElementById('regPassC').value;
+  const fname = document.getElementById('regFname').value.trim();
+  const lname = document.getElementById('regLname').value.trim();
+  let ok = true;
+
+  // Validate cơ bản
+  const eOk = validateEmail(email); setField('f-email-r', eOk); if (!eOk) ok = false;
+  const pOk = pass.length >= 6; setField('f-pass-r', pOk); if (!pOk) ok = false;
+  const pcOk = (pass === passC && !!passC); setField('f-pass-c', pcOk); if (!pcOk) ok = false;
+  if (!ok) return;
+
+  const btn = document.getElementById('regBtn');
+  btn.classList.add('loading');
+
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      
+      body: JSON.stringify({ 
+        username: email, // Lấy email làm username luôn cho tiện
+        email: email, 
+        password: pass 
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      showToast('Đăng ký thành công! Hãy đăng nhập.');
+      setTimeout(() => switchTab('login'), 1800);
+    } else {
+      showToast(data.message || 'Đăng ký thất bại', false);
+    }
+  } catch (e) {
+    console.error("Lỗi kết nối:", e);
+    showToast('Lỗi kết nối đến Server!', false);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+// Enter key
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter') {
+    if(document.getElementById('loginForm').classList.contains('active')) handleLogin();
+    else handleRegister();
+  }
+});
+
+window.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    
+    if (token) {
+        // 1. Lưu token vào máy trước
+        localStorage.setItem('token', token);
+        
+        try {
+            // 2. Đi lấy thông tin User thật từ Server bằng cái Token vừa nhận
+            // Lưu ý: Đảm bảo Backend của ông có route GET /api/users/profile
+            const res = await fetch('http://localhost:3000/api/users/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const userData = await res.json();
+
+            if (res.ok) {
+                // 3. Cập nhật thông tin User MỚI NHẤT (có role chuẩn) vào máy
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                showToast('Đăng nhập Google thành công!');
+
+                // 4. PHÂN LUỒNG THẬT SỰ:
+                setTimeout(() => {
+                    if (userData.role === 'admin') {
+                        window.location.href = 'Admin.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }, 1500);
+            } else {
+                showToast('Không thể xác thực quyền hạn!', false);
+            }
+        } catch (err) {
+            console.error("Lỗi lấy profile:", err);
+            showToast('Lỗi kết nối Server!', false);
+        }
+    }
+});
+</script>
+</body>
+</html>

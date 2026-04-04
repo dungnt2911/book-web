@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookStore — Hồ Sơ Cá Nhân</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1410; --cream: #f5f0e8; --gold: #b8965a;
+      --gold-lt: #d4af74; --warm: #e8dece; --muted: #7a6e62; --red: #8b2a2a;
+    }
+    body {
+      font-family: 'Josefin Sans', sans-serif; background: var(--cream); color: var(--ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; cursor: none;
+    }
+
+    /* Custom cursor */
+    #cursor {
+      width: 10px; height: 10px; background: var(--gold); border-radius: 50%;
+      position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;
+      transform: translate(-50%,-50%); transition: width .2s, height .2s, background .2s;
+    }
+    #cursor.hovered { width: 28px; height: 28px; background: transparent; border: 1.5px solid var(--gold); }
+
+    /* Profile Card */
+    .profile-card {
+      width: 100%; max-width: 500px; background: #fff; padding: 60px;
+      box-shadow: 0 20px 60px rgba(26,20,16,0.05); position: relative;
+      border: 1px solid rgba(184,150,90,0.1); animation: fadeUp 0.8s ease;
+    }
+    .profile-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--gold);
+    }
+    
+    .profile-header { text-align: center; margin-bottom: 40px; }
+    .avatar-circle {
+      width: 80px; height: 80px; background: var(--ink); color: var(--gold);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; margin: 0 auto 20px;
+    }
+    .profile-title {
+      font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; margin-bottom: 8px;
+    }
+    .profile-role {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 600;
+    }
+
+    /* Info List */
+    .info-group { margin-bottom: 30px; }
+    .info-item {
+      display: flex; justify-content: space-between; padding: 15px 0;
+      border-bottom: 1px solid rgba(184,150,90,0.1);
+    }
+    .info-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .info-value { font-size: 0.9rem; font-weight: 400; color: var(--ink); }
+
+    /* Actions */
+    .actions { display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
+    .btn {
+      padding: 15px; text-align: center; text-decoration: none; font-size: 0.72rem;
+      font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+      transition: all 0.3s; cursor: none;
+    }
+    .btn-home { background: var(--ink); color: var(--cream); border: none; }
+    .btn-home:hover { background: var(--gold); }
+    .btn-logout { background: transparent; color: var(--red); border: 1px solid rgba(139,42,42,0.2); }
+    .btn-logout:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<div class="profile-card">
+  <div class="profile-header">
+    <div class="avatar-circle" id="userInitial">U</div>
+    <h1 class="profile-title" id="userNameDisplay">Thành viên</h1>
+    <p class="profile-role" id="userRoleDisplay">Khách hàng thân thiết</p>
+  </div>
+
+  <div class="info-group">
+    <div class="info-item">
+      <span class="info-label">Email</span>
+      <span class="info-value" id="userEmail">---</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">ID Người dùng</span>
+      <span class="info-value" id="userId">---</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="index.html" class="btn btn-home">Tiếp tục mua sắm</a>
+    <a href="#" class="btn btn-logout" onclick="handleLogout()">Đăng xuất tài khoản</a>
+  </div>
+</div>
+
+<script>
+  // 1. Kiểm tra đăng nhập
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  if (!token || !user.email) {
+    window.location.href = 'Auth.html'; // Đẩy về trang đăng nhập nếu chưa có token
+  }
+
+  // 2. Hiển thị dữ liệu
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('userNameDisplay').textContent = user.username || user.email.split('@')[0];
+    document.getElementById('userEmail').textContent = user.email;
+    document.getElementById('userId').textContent = user.id || 'N/A';
+    document.getElementById('userRoleDisplay').textContent = user.role === 'admin' ? 'Quản trị viên' : 'Khách hàng thân thiết';
+    document.getElementById('userInitial').textContent = (user.username || user.email).charAt(0).toUpperCase();
+  });
+
+  // 3. Xử lý Đăng xuất
+  function handleLogout() {
+    if(confirm('Ông có chắc chắn muốn đăng xuất không?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+  }
+
+  // 4. Custom cursor
+  const cur = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cur.style.left = e.clientX + 'px';
+    cur.style.top = e.clientY + 'px';
+  });
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => cur.classList.add('hovered'));
+    el.addEventListener('mouseleave', () => cur.classList.remove('hovered'));
+  });
+</script>
+
+</body>
+</html>
