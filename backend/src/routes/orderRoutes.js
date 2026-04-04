@@ -3,10 +3,10 @@ const router  = express.Router();
 const orderController = require('../controllers/orderController');
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
-// 1. Lấy đơn hàng của cá nhân (Phải để TRƯỚC các route có tham số :id)
+// 1. Lấy đơn hàng của cá nhân
 router.get('/my-orders', verifyToken, orderController.getMyOrders);
 
-// 2. Tạo đơn hàng mới (BẮT BUỘC phải có verifyToken để lấy ID người mua)
+// 2. Tạo đơn hàng mới 
 router.post('/', verifyToken, orderController.createOrder);          
 
 // 3. Admin lấy tất cả đơn hàng 
