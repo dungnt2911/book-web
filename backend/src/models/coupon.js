@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const CouponSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true, uppercase: true }, // Mã (VD: NHATHU20)
   discountType: { type: String, enum: ['percent', 'fixed'], default: 'percent' }, // Giảm theo % hoặc số tiền cố định
-  discountValue: { type: Number, required: true }, // Giá trị giảm (Vd: 20 cho 20% hoặc 50000 cho 50k)
+  discountValue: { type: Number, required: true }, // Giá trị giảm 
   minAmount: { type: Number, default: 0 }, // Đơn hàng tối thiểu để áp dụng
   maxDiscount: { type: Number }, // Giảm tối đa bao nhiêu (dành cho loại percent)
   expiryDate: { type: Date, required: true }, // Ngày hết hạn
